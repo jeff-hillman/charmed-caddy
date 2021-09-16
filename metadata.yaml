@@ -1,0 +1,16 @@
+# Copyright 2021 Jeff Hillman
+# See LICENSE file for licensing details.
+name: caddy
+description: |
+  Caddy 2 is a powerful, enterprise-ready, open source web server 
+  with automatic HTTPS written in Go.
+summary: |
+  Caddy 2 web server
+containers:
+  caddy:
+    resource: caddy
+
+resources:
+  caddy:
+    type: oci-image
+    description: OCI image for caddy
