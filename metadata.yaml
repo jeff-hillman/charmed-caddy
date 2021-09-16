@@ -1,16 +1,31 @@
-# Copyright 2021 Jeff Hillman
+# Copyright 2021 Jon Seager
 # See LICENSE file for licensing details.
 name: caddy
 description: |
-  Caddy 2 is a powerful, enterprise-ready, open source web server 
-  with automatic HTTPS written in Go.
+  A basic demonstration charm that hosts a placeholder webpage with links
+  to various Juju/Charmed Operator SDK pages. Hosted using a small, custom
+  webserver written in Go (https://github.com/jnsgruk/gosherve). Illustrates
+  the use of charm workloads, actions, config, storage and relations.
 summary: |
-  Caddy 2 web server
+  A demonstration charm for Kubecon Operator Day 2021.
+
 containers:
   caddy:
     resource: caddy
+    mounts:
+      - storage: webroot
+        location: /srv
 
 resources:
   caddy:
     type: oci-image
     description: OCI image for caddy
+
+storage:
+  webroot:
+    type: filesystem
+    location: /srv
+
+requires:
+  ingress:
+    interface: ingress
