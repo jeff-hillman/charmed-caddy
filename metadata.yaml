@@ -14,7 +14,7 @@ containers:
     resource: caddy
     mounts:
       - storage: webroot
-        location: /srv
+        location: /data
 
 resources:
   caddy:
@@ -24,7 +24,7 @@ resources:
 storage:
   webroot:
     type: filesystem
-    location: /srv
+    location: /data
 
 requires:
   ingress:

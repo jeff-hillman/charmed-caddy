@@ -87,7 +87,7 @@ class CaddyCharm(CharmBase):
                     "startup": "enabled",
                     "environment": {
                         "HOSTNAME": self.config["hostname"],
-                        "FILE_SERVER": self.config["file-server"],
+                        "FILE_SERVER": self.config["file-server"].lower(),
                         "WEBROOT": "/srv",
                     },
                 }
