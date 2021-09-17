@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2021 Jon Seager
+# Copyright 2021 Jeff Hillman
 # See LICENSE file for licensing details.
 #
 # Learn more at: https://juju.is/docs/sdk
@@ -28,30 +28,26 @@ class CaddyCharm(CharmBase):
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.framework.observe(self.on.install, self._on_install)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
-        self.framework.observe(self.on.pull_site_action, self._pull_site_action)
 
         self.ingress = IngressRequires(
             self,
             {
-                "service-hostname": self._hostname,
+                "service-hostname": self.config["hostname"],
                 "service-name": self.app.name,
                 "service-port": 8080,
             },
         )
 
-    @property
-    def _hostname(self):
-        """Return the external hostname to be passed to ingress via the relation."""
-        # It is recommended to default to `self.app.name` so that the external
-        # hostname will correspond to the deployed application name in the
-        # model, but allow it to be set to something specific via config.
-        return self.config["hostname"] or self.app.name
-
-    def _on_install(self, _):
-        # Download the site
-        self._fetch_site()
+    def _render_template(self):
+        from jinja2 import Environment, PackageLoader, select_autoescape
+        env = Environment(
+            loader=PackageLoader("caddy"),
+            autoescape=select_autoescape()
+        )
+        template = env.get_template("Caddyfile")
+        config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"].lower())
+        container.push('/etc/caddy/Caddyfile', config, make_dirs=True)
 
     def _on_config_changed(self, event):
         """Handle the config-changed event"""
@@ -69,7 +65,9 @@ class CaddyCharm(CharmBase):
                 container.add_layer("caddy", layer, combine=True)
                 logging.info("Added updated layer 'caddy' to Pebble plan")
                 # Restart it and report a new status to Juju
-                container.restart("caddy")
+                container.stop("caddy")
+                self._render_template()
+                container.start("caddy")
                 logging.info("Restarted caddy service")
             # All is well, set an ActiveStatus
             self.unit.status = ActiveStatus()
@@ -89,28 +87,12 @@ class CaddyCharm(CharmBase):
                     "startup": "enabled",
                     "environment": {
                         "HOSTNAME": self.config["hostname"],
+                        "FILE_SERVER": self.config["file-server"],
                         "WEBROOT": "/srv",
                     },
                 }
             },
         }
-
-    def _fetch_site(self):
-        """Fetch latest copy of website from Github and move into webroot"""
-        # Set the site URL
-        site_src = "https://jnsgr.uk/demo-site"
-        # Set some status and do some logging
-        self.unit.status = MaintenanceStatus("Fetching web site")
-        logger.info("Downloading site from %s", site_src)
-        # Download the site
-        urllib.request.urlretrieve(site_src, "/srv/index.html")
-        # Set the unit status back to Active
-        self.unit.status = ActiveStatus()
-
-    def _pull_site_action(self, event):
-        """Action handler that pulls the latest site archive and unpacks it"""
-        self._fetch_site()
-        event.set_results({"result": "site pulled"})
 
 
 if __name__ == "__main__":

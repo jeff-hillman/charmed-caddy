@@ -1,4 +1,4 @@
-# Copyright 2021 Jon Seager
+# Copyright 2021 Jeff Hillman
 # See LICENSE file for licensing details.
 #
 # Learn more about config at: https://juju.is/docs/sdk/config
@@ -10,3 +10,8 @@ options:
       The external hostname this application should be available on. If unset,
       it will default to the deployed application name in the model.
     type: string
+  file-server:
+    default: False
+    description: >
+      Enable file server functionality
+    type: boolean
