@@ -29,6 +29,7 @@ class CaddyCharm(CharmBase):
     def __init__(self, *args):
         super().__init__(*args)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
+        self.framework.observe(self.on.install, self._on_install)
 
         self.ingress = IngressRequires(
             self,
@@ -46,7 +47,7 @@ class CaddyCharm(CharmBase):
             autoescape=select_autoescape()
         )
         template = env.get_template("Caddyfile")
-        config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"].lower())
+        config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"])
         container.push('/etc/caddy/Caddyfile', config, make_dirs=True)
 
     def _on_config_changed(self, event):
@@ -74,6 +75,29 @@ class CaddyCharm(CharmBase):
         else:
             self.unit.status = WaitingStatus("waiting for Pebble in workload container")
 
+    def _on_install(self, event):
+        container = event.workload
+        caddy_layer = {
+            "summary": "caddy layer",
+            "description": "pebble config layer for caddy",
+            "services": {
+                "caddy": {
+                    "override": "replace",
+                    "summary": "caddy",
+                    "command": "caddy start",
+                    "startup": "enabled",
+                    "environment": {
+                        "HOSTNAME": self.config["hostname"],
+                        "FILE_SERVER": self.config["file-server"],
+                        "WEBROOT": "/data",
+                    },
+                }
+            },
+        }
+        container.add_layer("caddy", caddy_layer, combine=True)
+        container.autostart()
+        self.unit.status = ActiveStatus()
+
     def _caddy_layer(self):
         """Returns a Pebble configration layer for Caddy"""
         return {
@@ -87,8 +111,8 @@ class CaddyCharm(CharmBase):
                     "startup": "enabled",
                     "environment": {
                         "HOSTNAME": self.config["hostname"],
-                        "FILE_SERVER": self.config["file-server"].lower(),
-                        "WEBROOT": "/srv",
+                        "FILE_SERVER": self.config["file-server"],
+                        "WEBROOT": "/data",
                     },
                 }
             },
