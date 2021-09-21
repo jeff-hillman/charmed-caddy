@@ -13,12 +13,13 @@ develop a new k8s charm using the Operator Framework:
 """
 
 import logging
-import urllib
 
-from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 from ops.charm import CharmBase
+from ops.framework import StoredState
 from ops.main import main
-from ops.model import ActiveStatus, MaintenanceStatus, WaitingStatus
+from ops.model import ActiveStatus
+from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,13 @@ logger = logging.getLogger(__name__)
 class CaddyCharm(CharmBase):
     """Charm the service."""
 
+    _stored = StoredState()
+
     def __init__(self, *args):
         super().__init__(*args)
+        self.framework.observe(self.on.caddy_pebble_ready, self._on_caddy_pebble_ready)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
-        self.framework.observe(self.on.install, self._on_install)
-
+        self._stored.set_default(hostname=[])
         self.ingress = IngressRequires(
             self,
             {
@@ -40,6 +43,35 @@ class CaddyCharm(CharmBase):
             },
         )
 
+    def _on_caddy_pebble_ready(self, event):
+        """Define and start a workload using the Pebble API.
+
+        Learn more about Pebble layers at https://github.com/canonical/pebble
+        """
+        # Get a reference the container attribute on the PebbleReadyEvent
+        container = event.workload
+        # Define an initial Pebble layer configuration
+        pebble_layer = {
+            "summary": "caddy layer",
+            "description": "pebble config layer for caddy",
+            "services": {
+                "caddy": {
+                    "override": "replace",
+                    "summary": "caddy",
+                    "command": "caddy start",
+                    "startup": "enabled",
+                    "environment": {"hostname": self.model.config["hostname"]},
+                }
+            },
+        }
+        # Add intial Pebble config layer using the Pebble API
+        container.add_layer("caddy", pebble_layer, combine=True)
+        # Autostart any services that were defined with startup: enabled
+        container.autostart()
+        # Learn more about statuses in the SDK docs:
+        # https://juju.is/docs/sdk/constructs#heading--statuses
+        self.unit.status = ActiveStatus()
+
     def _render_template(self):
         from jinja2 import Environment, PackageLoader, select_autoescape
         env = Environment(
@@ -48,14 +80,23 @@ class CaddyCharm(CharmBase):
         )
         template = env.get_template("Caddyfile")
         config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"])
+        container = self.unit.get_container("caddy")
         container.push('/etc/caddy/Caddyfile', config, make_dirs=True)
 
-    def _on_config_changed(self, event):
-        """Handle the config-changed event"""
+
+    def _on_config_changed(self, _):
+        """Just an example to show how to deal with changed configuration.
+
+        Learn more about config at https://juju.is/docs/sdk/config
+        """
+        current = self.config["hostname"]
+        if current not in self._stored.hostname:
+            logger.debug("found a new hostname: %r", current)
+            self._stored.hostname.append(current)
         # Get the caddy container so we can configure/manipulate it
         container = self.unit.get_container("caddy")
         # Create a new config layer
-        layer = self._caddy_layer()
+        layer = self._on_caddy_pebble_ready()
 
         if container.can_connect():
             # Get the current config
@@ -75,48 +116,6 @@ class CaddyCharm(CharmBase):
         else:
             self.unit.status = WaitingStatus("waiting for Pebble in workload container")
 
-    def _on_install(self, event):
-        container = event.workload
-        caddy_layer = {
-            "summary": "caddy layer",
-            "description": "pebble config layer for caddy",
-            "services": {
-                "caddy": {
-                    "override": "replace",
-                    "summary": "caddy",
-                    "command": "caddy start",
-                    "startup": "enabled",
-                    "environment": {
-                        "HOSTNAME": self.config["hostname"],
-                        "FILE_SERVER": self.config["file-server"],
-                        "WEBROOT": "/data",
-                    },
-                }
-            },
-        }
-        container.add_layer("caddy", caddy_layer, combine=True)
-        container.autostart()
-        self.unit.status = ActiveStatus()
-
-    def _caddy_layer(self):
-        """Returns a Pebble configration layer for Caddy"""
-        return {
-            "summary": "caddy layer",
-            "description": "pebble config layer for caddy",
-            "services": {
-                "caddy": {
-                    "override": "replace",
-                    "summary": "caddy",
-                    "command": "caddy start",
-                    "startup": "enabled",
-                    "environment": {
-                        "HOSTNAME": self.config["hostname"],
-                        "FILE_SERVER": self.config["file-server"],
-                        "WEBROOT": "/data",
-                    },
-                }
-            },
-        }
 
 
 if __name__ == "__main__":
