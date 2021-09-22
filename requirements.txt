@@ -1,1 +1,5 @@
-ops >= 1.2.0
+git+https://github.com/canonical/operator/#egg=ops
+#ops >= 1.2.0
+ops-lib-pgsql
+kubernetes
+cffi>=1.4.1
