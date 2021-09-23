@@ -25,7 +25,7 @@ from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 
 logger = logging.getLogger(__name__)
 
-CADDYFILE_TEMPLATE = "templates/Caddyfile"
+CADDYFILE_TEMPLATE = "Caddyfile"
 CADDY_CONFIG = "/etc/caddy/Caddyfile"
 
 class CaddyCharm(CharmBase):
@@ -106,7 +106,7 @@ class CaddyCharm(CharmBase):
             logger.debug("found a new hostname: %r", current)
             self._stored.hostname.append(current)
         # Get the caddy container so we can configure/manipulate it
-        container = self.unit.get_container("caddy")
+        container = self.unit.get_container(self.app.name)
         # Create a new config layer
         #layer = self._on_caddy_pebble_ready()
 
@@ -118,7 +118,7 @@ class CaddyCharm(CharmBase):
             self.unit.status = WaitingStatus("waiting for Pebble in workload container")
 
     def _configure_caddy_service(self, event = None):
-        container = self.unit.get_container("caddy")
+        container = self.unit.get_container(self.app.name)
         if not container.can_connect():
             logger.debug("XXX leaving CONFIG CHANGED early, pebble not ready?")
             return
