@@ -71,7 +71,7 @@ class CaddyCharm(CharmBase):
         # Add intial Pebble config layer using the Pebble API
         container.add_layer("caddy", pebble_layer, combine=True)
         # Autostart any services that were defined with startup: enabled
-        container.autostart()
+        # container.autostart()
         # Learn more about statuses in the SDK docs:
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()
@@ -106,7 +106,7 @@ class CaddyCharm(CharmBase):
             logger.debug("found a new hostname: %r", current)
             self._stored.hostname.append(current)
         # Get the caddy container so we can configure/manipulate it
-        container = self.unit.get_container(self.app.name)
+        container = self.unit.get_container("caddy")
         # Create a new config layer
         #layer = self._on_caddy_pebble_ready()
 
@@ -118,7 +118,7 @@ class CaddyCharm(CharmBase):
             self.unit.status = WaitingStatus("waiting for Pebble in workload container")
 
     def _configure_caddy_service(self, event = None):
-        container = self.unit.get_container(self.app.name)
+        container = self.unit.get_container("caddy")
         if not container.can_connect():
             logger.debug("XXX leaving CONFIG CHANGED early, pebble not ready?")
             return
