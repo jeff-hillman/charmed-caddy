@@ -129,7 +129,7 @@ class CaddyCharm(CharmBase):
         if svc.is_running():
             container.restart("caddy")
         else:
-            container.start("canddy")
+            container.start("caddy")
         logger.debug("XXX applications: " + str(container.get_services()))
         logger.debug("XXX END OF CONFIG CHANGED")
 
