@@ -77,17 +77,24 @@ class CaddyCharm(CharmBase):
         self.unit.status = ActiveStatus()
         self._configure_caddy_service()
 
+#    def _render_template(self):
+#        from jinja2 import Environment, PackageLoader, select_autoescape
+#        env = Environment(
+#            #loader=PackageLoader("caddy"),
+#            autoescape=select_autoescape()
+#        )
+#        template = CADDYFILE_TEMPLATE
+#        config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"])
+#        container = self.unit.get_container("caddy")
+#        container.push(CADDY_CONFIG, config, make_dirs=True)
+
     def _render_template(self):
-        from jinja2 import Environment, PackageLoader, select_autoescape
-        env = Environment(
-            #loader=PackageLoader("caddy"),
-            autoescape=select_autoescape()
-        )
-        template = CADDYFILE_TEMPLATE
+        from jinja2 import Environment, FileSystemLoader, select_autoescape
+        env = Environment(loader=FileSystemLoader("templates/"))
+        template = env.get_template(CADDYFILE_TEMPLATE)
         config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"])
         container = self.unit.get_container("caddy")
         container.push(CADDY_CONFIG, config, make_dirs=True)
-
 
     def _on_config_changed(self, _):
         """Just an example to show how to deal with changed configuration.
