@@ -62,7 +62,7 @@ class CaddyCharm(CharmBase):
                 "caddy": {
                     "override": "replace",
                     "summary": "caddy",
-                    "command": "caddy start",
+                    "command": "caddy run --config /etc/caddy/Caddyfile --adapter caddyfile",
                     "startup": "enabled",
                     "environment": {},
                 }
@@ -71,7 +71,7 @@ class CaddyCharm(CharmBase):
         # Add intial Pebble config layer using the Pebble API
         container.add_layer("caddy", pebble_layer, combine=True)
         # Autostart any services that were defined with startup: enabled
-        #container.autostart()
+        container.autostart()
         # Learn more about statuses in the SDK docs:
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()
