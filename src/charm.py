@@ -13,16 +13,20 @@ develop a new k8s charm using the Operator Framework:
 """
 
 import logging
+import ops.lib
 
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus
+from ops.pebble import ServiceStatus
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 
 
 logger = logging.getLogger(__name__)
 
+CADDYFILE_TEMPLATE = "templates/Caddyfile"
+CADDY_CONFIG = "/etc/caddy/Caddyfile"
 
 class CaddyCharm(CharmBase):
     """Charm the service."""
@@ -60,7 +64,7 @@ class CaddyCharm(CharmBase):
                     "summary": "caddy",
                     "command": "caddy start",
                     "startup": "enabled",
-                    "environment": {"hostname": self.model.config["hostname"]},
+                    "environment": {},
                 }
             },
         }
@@ -71,17 +75,18 @@ class CaddyCharm(CharmBase):
         # Learn more about statuses in the SDK docs:
         # https://juju.is/docs/sdk/constructs#heading--statuses
         self.unit.status = ActiveStatus()
+        self._configure_caddy_service()
 
     def _render_template(self):
         from jinja2 import Environment, PackageLoader, select_autoescape
         env = Environment(
-            loader=PackageLoader("caddy"),
+            #loader=PackageLoader("caddy"),
             autoescape=select_autoescape()
         )
-        template = env.get_template("Caddyfile")
+        template = CADDYFILE_TEMPLATE
         config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"])
         container = self.unit.get_container("caddy")
-        container.push('/etc/caddy/Caddyfile', config, make_dirs=True)
+        container.push(CADDY_CONFIG, config, make_dirs=True)
 
 
     def _on_config_changed(self, _):
@@ -98,23 +103,28 @@ class CaddyCharm(CharmBase):
         # Create a new config layer
         #layer = self._on_caddy_pebble_ready()
 
+        self._configure_caddy_service()
         if container.can_connect():
-            # Get the current config
-            services = container.get_plan().to_dict().get("services", {})
-            # Check if there are any changes to services
-            if services != layer["services"]:
-                # Changes were made, add the new layer
-                container.add_layer("caddy", layer, combine=True)
-                logging.info("Added updated layer 'caddy' to Pebble plan")
-                # Restart it and report a new status to Juju
-                container.stop("caddy")
-                self._render_template()
-                container.start("caddy")
-                logging.info("Restarted caddy service")
             # All is well, set an ActiveStatus
             self.unit.status = ActiveStatus()
         else:
             self.unit.status = WaitingStatus("waiting for Pebble in workload container")
+
+    def _configure_caddy_service(self, event = None):
+        container = self.unit.get_container("caddy")
+        if not container.can_connect():
+            logger.debug("XXX leaving CONFIG CHANGED early, pebble not ready?")
+            return
+
+        self._render_template()
+
+        svc = container.get_service("caddy")
+        if svc.is_running():
+            container.restart("caddy")
+        else:
+            container.start("canddy")
+        logger.debug("XXX applications: " + str(container.get_services()))
+        logger.debug("XXX END OF CONFIG CHANGED")
 
 
 
