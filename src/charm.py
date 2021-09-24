@@ -13,13 +13,11 @@ develop a new k8s charm using the Operator Framework:
 """
 
 import logging
-import ops.lib
 
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
-from ops.model import ActiveStatus
-from ops.pebble import ServiceStatus
+from ops.model import ActiveStatus, WaitingStatus
 from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 
 
@@ -101,12 +99,13 @@ class CaddyCharm(CharmBase):
 
         Learn more about config at https://juju.is/docs/sdk/config
         """
+        container = self.unit.get_container("caddy")
+
         current = self.config["hostname"]
         if current not in self._stored.hostname:
             logger.debug("found a new hostname: %r", current)
             self._stored.hostname.append(current)
         # Get the caddy container so we can configure/manipulate it
-        container = self.unit.get_container("caddy")
         # Create a new config layer
         #layer = self._on_caddy_pebble_ready()
 
@@ -122,10 +121,17 @@ class CaddyCharm(CharmBase):
         if not container.can_connect():
             logger.debug("XXX leaving CONFIG CHANGED early, pebble not ready?")
             return
-
+        logger.debug("Running _configure_caddy_service()")
         self._render_template()
-
-        svc = container.get_service("caddy")
+        logger.debug("Finished the _render_template()")
+        svc = None
+        try:
+            svc = container.get_service("caddy")
+        except:
+            logger.debug("Failed to run container.get_service()")
+            if event:
+                event.defer()
+            return
         if svc.is_running():
             container.restart("caddy")
         else:
