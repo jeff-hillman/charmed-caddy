@@ -21,10 +21,9 @@ local_certs
 	# Enable the static file server.
 	#file_server
 	{% if file_server -%}
-	file_server {% if browseable -%} browse {% endif -%} {
-		root /data
-	}
+	file_server {% if browseable -%} browse {% endif -%}
 	{% endif -%}
+	root /data
 	# Another common task is to set up a reverse proxy:
 	# reverse_proxy localhost:8080
 
