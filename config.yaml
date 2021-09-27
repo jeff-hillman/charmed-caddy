@@ -6,18 +6,18 @@
 options:
   hostname:
     default: ""
-    description: >
+    description: |
       The external hostname this application should be available on. If unset,
       it will default to the deployed application name in the model.
     type: string
   file-server:
     default: False
-    description: >
+    description: |
       Enable file server functionality
     type: boolean
   browseable:
     default: False
-    description: >
+    description: |
       Allows file listings for requests to directories that do not have an index file. 
-      NOTE This should only be enable if file-server is set to True.
+      *NOTE* This config option does nothing if 'file-server' is not set to True.
     type: boolean
