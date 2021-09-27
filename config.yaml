@@ -15,3 +15,9 @@ options:
     description: >
       Enable file server functionality
     type: boolean
+  browseable:
+    default: False
+    description: >
+      Allows file listings for requests to directories that do not have an index file. 
+      NOTE This should only be enable if file-server is set to True.
+    type: boolean

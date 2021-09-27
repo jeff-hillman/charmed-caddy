@@ -90,7 +90,7 @@ class CaddyCharm(CharmBase):
         from jinja2 import Environment, FileSystemLoader, select_autoescape
         env = Environment(loader=FileSystemLoader("templates/"))
         template = env.get_template(CADDYFILE_TEMPLATE)
-        config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"])
+        config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"], browseable=self.config["browseable"])
         container = self.unit.get_container("caddy")
         container.push(CADDY_CONFIG, config, make_dirs=True)
 
