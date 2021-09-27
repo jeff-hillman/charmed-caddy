@@ -16,7 +16,7 @@ local_certs
 :80 {
 {% endif -%}
 	# Set this path to your site's directory.
-	root /usr/share/caddy
+	root * /usr/share/caddy
 
 	# Enable the static file server.
 	#file_server
