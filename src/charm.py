@@ -15,10 +15,10 @@ develop a new k8s charm using the Operator Framework:
 import logging
 
 from ops.charm import CharmBase
-from ops.framework import StoredState
+#from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, WaitingStatus
-from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
+#from charms.nginx_ingress_integrator.v0.ingress import IngressRequires
 
 
 logger = logging.getLogger(__name__)
@@ -29,21 +29,21 @@ CADDY_CONFIG = "/etc/caddy/Caddyfile"
 class CaddyCharm(CharmBase):
     """Charm the service."""
 
-    _stored = StoredState()
+#    _stored = StoredState()
 
     def __init__(self, *args):
         super().__init__(*args)
         self.framework.observe(self.on.caddy_pebble_ready, self._on_caddy_pebble_ready)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
-        self._stored.set_default(hostname=[])
-        self.ingress = IngressRequires(
-            self,
-            {
-                "service-hostname": self.config["hostname"],
-                "service-name": self.app.name,
-                "service-port": 8080,
-            },
-        )
+#        self._stored.set_default(hostname=[])
+#        self.ingress = IngressRequires(
+#            self,
+#            {
+#                "service-hostname": self.config["hostname"],
+#                "service-name": self.app.name,
+#                "service-port": 8080,
+#            },
+#        )
 
     def _on_caddy_pebble_ready(self, event):
         """Define and start a workload using the Pebble API.
@@ -101,10 +101,10 @@ class CaddyCharm(CharmBase):
         """
         container = self.unit.get_container("caddy")
 
-        current = self.config["hostname"]
-        if current not in self._stored.hostname:
-            logger.debug("found a new hostname: %r", current)
-            self._stored.hostname.append(current)
+#        current = self.config["hostname"]
+#        if current not in self._stored.hostname:
+#            logger.debug("found a new hostname: %r", current)
+#            self._stored.hostname.append(current)
         # Get the caddy container so we can configure/manipulate it
         # Create a new config layer
         #layer = self._on_caddy_pebble_ready()
