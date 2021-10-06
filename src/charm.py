@@ -29,21 +29,10 @@ CADDY_CONFIG = "/etc/caddy/Caddyfile"
 class CaddyCharm(CharmBase):
     """Charm the service."""
 
-#    _stored = StoredState()
-
     def __init__(self, *args):
         super().__init__(*args)
         self.framework.observe(self.on.caddy_pebble_ready, self._on_caddy_pebble_ready)
         self.framework.observe(self.on.config_changed, self._on_config_changed)
-#        self._stored.set_default(hostname=[])
-#        self.ingress = IngressRequires(
-#            self,
-#            {
-#                "service-hostname": self.config["hostname"],
-#                "service-name": self.app.name,
-#                "service-port": 8080,
-#            },
-#        )
 
     def _on_caddy_pebble_ready(self, event):
         """Define and start a workload using the Pebble API.
@@ -75,16 +64,6 @@ class CaddyCharm(CharmBase):
         self.unit.status = ActiveStatus()
         self._configure_caddy_service()
 
-#    def _render_template(self):
-#        from jinja2 import Environment, PackageLoader, select_autoescape
-#        env = Environment(
-#            #loader=PackageLoader("caddy"),
-#            autoescape=select_autoescape()
-#        )
-#        template = CADDYFILE_TEMPLATE
-#        config = template.render(hostname=self.config["hostname"], file_server=self.config["file-server"])
-#        container = self.unit.get_container("caddy")
-#        container.push(CADDY_CONFIG, config, make_dirs=True)
 
     def _render_template(self):
         from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -101,10 +80,6 @@ class CaddyCharm(CharmBase):
         """
         container = self.unit.get_container("caddy")
 
-#        current = self.config["hostname"]
-#        if current not in self._stored.hostname:
-#            logger.debug("found a new hostname: %r", current)
-#            self._stored.hostname.append(current)
         # Get the caddy container so we can configure/manipulate it
         # Create a new config layer
         #layer = self._on_caddy_pebble_ready()
