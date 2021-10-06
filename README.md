@@ -25,6 +25,7 @@ caddy:latest
 
 - Configure proper ACME cert generation
 - Add actions to upload files to fileserver
+- Add DB relation to enable PHP support
 
 ## Contributing
 
